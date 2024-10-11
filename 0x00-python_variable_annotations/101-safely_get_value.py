@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Contains a tpe annotated function
+Contains a type annotated function
 """
 from typing import Mapping, TypeVar, Union, Any
 
@@ -13,6 +13,7 @@ def safely_get_value(
     key: Any,
     default: Union[T, None] = None
 ) -> Union[Any, T]:
+    """Returns a dictionary value or default provided"""
     if key in dct:
         return dct[key]
     else:
