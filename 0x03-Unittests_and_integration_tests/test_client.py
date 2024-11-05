@@ -78,8 +78,14 @@ class TestGithubOrgClient(unittest.TestCase):
 
 class TestIntegrationGithubOrgClient(unittest.TestCase):
     """Integration tests for the GithubOrgClient class"""
-    def setUpClass(cls):
-        pass
 
+    @classmethod
+    def setUpClass(cls):
+        """Set up class-wide mocks for external requests"""
+        cls.get_patcher = patch("requests.get")
+        mock_get = cls.get_patcher.start()
+
+    @classmethod
     def tearDownClass(cls):
-        pass
+        """Stop the patcher"""
+        cls.get_patcher.stop()
