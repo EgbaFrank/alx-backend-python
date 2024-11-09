@@ -3,9 +3,10 @@
 Client test module
 """
 import unittest
-from unittest.mock import patch, PropertyMock
-from parameterized import parameterized
+from unittest.mock import patch, PropertyMock, Mock
+from parameterized import parameterized, parameterized_class
 from client import GithubOrgClient
+from fixtures import TEST_PAYLOAD
 
 
 class TestGithubOrgClient(unittest.TestCase):
@@ -76,6 +77,10 @@ class TestGithubOrgClient(unittest.TestCase):
         self.assertEqual(client.has_license(repo, license_key), status)
 
 
+@parameterized_class(
+    ("org_payload", "repos_payload", "expected_repos", "apache2_repos"),
+    TEST_PAYLOAD
+)
 class TestIntegrationGithubOrgClient(unittest.TestCase):
     """Integration tests for the GithubOrgClient class"""
 
@@ -85,7 +90,37 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
         cls.get_patcher = patch("requests.get")
         mock_get = cls.get_patcher.start()
 
+        def get_json_side_effect(url, *args, **kwargs):
+            """Check the URL and return the corresponding fixture
+            """
+            if url == cls.org_payload["repos_url"]:
+                return cls.repos_payload
+            elif url == "https://api.github.com/orgs/google":
+                return cls.org_payload
+            return []
+
+        mock_get.side_effect = (
+            lambda url: Mock(
+                json=lambda: get_json_side_effect(url)
+            )
+        )
+
     @classmethod
     def tearDownClass(cls):
         """Stop the patcher"""
         cls.get_patcher.stop()
+
+    def test_public_repos(self):
+        """Integration test for the public_repos method
+        """
+        client = GithubOrgClient("google")
+        self.assertEqual(client.public_repos(), self.expected_repos)
+
+    def test_public_repos_with_license(self):
+        """Integration test for the public_repos method with license
+        """
+        client = GithubOrgClient("google")
+        self.assertEqual(
+            client.public_repos(license="apache-2.0"),
+            self.apache2_repos
+        )
